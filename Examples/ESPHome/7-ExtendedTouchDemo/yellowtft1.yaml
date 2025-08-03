@@ -2,14 +2,14 @@
 # Basic yaml code to get the ESP32-2432S028R display to work in ESPHome.
 #
 # This yaml displays two circles with icons in them acting as binary touch sensors inside of Home Assistant.
-# It turns off the backlight after 30-60 seconds 
+# It turns off the backlight after 30-60 seconds
 #
 # Written by Jonny Bergdahl and then extended slightly
 # - [GitHub](https://github.com/jonnybergdahl)
 # - [Twitter](https://twitter.com/jonnybergdahl)
 # - [YouTube](https://www.youtube.com/jonnybergdahl)
 #
-# ============================================================ 
+# ============================================================
 # NOTE:
 # In order for this to work you need to add the following settings in your secrets.yaml file:
 # - api_key
@@ -20,7 +20,7 @@
 #
 # Create a folder named fonts in your ESPHome folder, and copy the file fonts/materialdesignicons-webfont.ttf there.
 #
-# ============================================================ 
+# ============================================================
 # Example file setup
 # Change the naming below, they will be the names used in Home Assistant
 #
@@ -28,14 +28,14 @@ substitutions:
   device_name: yellowtft1
   friendly_name: Yellow TFT 1
 
-# ============================================================ 
+# ============================================================
 # Standard ESPHome setup
 #
 # ESPHome naming
 esphome:
   name: $device_name
   friendly_name: $friendly_name
- 
+
 # The ESP32-2432S028R uses a standard ESP32-WROVER, so we use the esp32dev defintion
 esp32:
   board: esp32dev
@@ -53,6 +53,7 @@ api:
 # Set OTA password
 ota:
   password: !secret ota_password
+  platform: esphome
 
 # Setup WiFi credentials
 wifi:
@@ -77,7 +78,7 @@ globals:
     restore_value: no
     initial_value: "true"
 
-# ============================================================ 
+# ============================================================
 # ESPHome Display related setup
 #
 # Create a font to use, add and remove glyphs as needed
@@ -90,6 +91,16 @@ font:
     glyphs: [
         "󰛨", # lightbulb-on
         "󰹏", # lightbulb-off
+        "󱤭", # electricty in
+        "󱤬", # electricity out
+        "󱩴", # solar electricity
+   #     "󱤬", # cloudy
+        "󰖕", # sun & clouds
+        "󰖖", # rain
+        "󰖙", # sunny,
+        "󰔐", # temp
+        "󰸂", # temp down
+        "󰸃", # temp up
     ]
   - file: "fonts/materialdesignicons-webfont.ttf"
     id: mdi_medium
@@ -103,12 +114,32 @@ font:
         "󰤨", # wifi-4
     ]
 
+  - file: 'fonts/Arimo-Regular.ttf'
+    id: arimo48
+    size: 48
+    glyphs: " .,°0123456789CVA-"
+  - file: 'fonts/Arimo-Regular.ttf'
+    id: arimo18
+    size: 18
+    glyphs: "0123456789%.Pluie: °CExtrTmpéa"
+  - file: 'fonts/NotoEmoji-VariableFont_wght.ttf'
+    id: noto18
+    size: 18
+    glyphs: "🌧🌦⛅🔌🎶☀ "
+
+
 # Create a Home Assistant blue color
 color:
   - id: ha_blue
     hex: 51c0f2
+  - id: ha_red
+    hex: F28350
+  - id: ha_green
+    hex: 4ff283
+  - id: ha_yellow
+    hex: 4ff283
 
-# ============================================================ 
+# ============================================================
 # Home Assistant related setup
 #
 light:
@@ -142,7 +173,7 @@ binary_sensor:
     y_min: 60
     y_max: 180
 
-# ============================================================ 
+# ============================================================
 # Hardware related setup
 #
 # Setup SPI for the display. The ESP32-2432S028R uses separate SPI buses for display and touch
@@ -199,20 +230,20 @@ interval:
     then:
       - script.execute: update_ui_values
     # Every 30 seconds check to see if we had a recent touch and
-    # turn off the backlight if we haven't.  This does mean that it 
+    # turn off the backlight if we haven't.  This does mean that it
     # can be up to 60 seconds until the backlight turns off
-  - interval: 30s
-    then:
-      - if:
-          condition:
-            - lambda: |-
-                return !id(recent_touch);
-          then: 
-            light.turn_off:
-              id: backlight
-          else:
-            - lambda: |-
-                id(recent_touch) = false;
+  # - interval: 30s
+  #   then:
+  #     - if:
+  #         condition:
+  #           - lambda: |-
+  #               return !id(recent_touch);
+  #         then:
+  #           light.turn_off:
+  #             id: backlight
+  #         else:
+  #           - lambda: |-
+  #               id(recent_touch) = false;
 
 # Setup the ili9xxx platform
 #
@@ -223,14 +254,49 @@ display:
     spi_id: tft
     cs_pin: GPIO15
     dc_pin: GPIO2
-    rotation: 90
+    invert_colors: false
+    transform:
+      swap_xy: true
+    dimensions:
+      width: 320
+      height: 240
     lambda: |-
       it.fill(id(Color::BLACK));
       it.filled_circle(80, 120, 60, id(ha_blue));
       it.filled_circle(240, 120, 60, id(ha_blue));
-      it.print(80, 120, id(mdi_large), TextAlign::CENTER, "󰛨");
-      it.print(240, 120, id(mdi_large), TextAlign::CENTER, "󰹏");
+      if (id(temperature_exterieure).state > 15) {
+        it.filled_circle(80, 120, 60, id(ha_green));
+      }
+      if (id(temperature_exterieure).state > 25) {
+        it.filled_circle(80, 120, 60, id(ha_yellow));
+      }
+      if (id(temperature_exterieure).state > 30) {
+        it.filled_circle(80, 120, 60, id(ha_red));
+      }
+      it.print(80, 120, id(mdi_large), TextAlign::CENTER, "󰔐");
+
       it.print(296, 0, id(mdi_medium), id(wifi_iconstring).c_str());
+      if (id(linky_va_in).has_state() and id(linky_va_in).state > 0) {
+        it.printf(160, 0, id(arimo48), TextAlign::TOP_CENTER, "%.1f VA", id(linky_va_in).state);
+        if (id(linky_va_in).state > 1000) {
+          it.filled_circle(240, 120, 60, id(ha_red));
+        }
+        it.print(240, 120, id(mdi_large), TextAlign::CENTER, "󱤭");
+      }
+      if (id(linky_va_out).has_state()and id(linky_va_out).state > 0) {
+        if (id(linky_va_out).state > 20) {
+          it.filled_circle(240, 120, 60, id(ha_green));
+        }
+        it.printf(160, 0, id(arimo48), TextAlign::TOP_CENTER, "- %.1f VA", id(linky_va_out).state);
+        it.print(240, 120, id(mdi_large), TextAlign::CENTER, "󱩴");
+      }
+      if (id(nantes_rain_chance).has_state()) {
+        it.print(0, 220, id(noto18), TextAlign::TOP_LEFT, "🌧");
+        it.printf(18, 220, id(arimo18), TextAlign::TOP_LEFT, " Pluie: %.f %%", id(nantes_rain_chance).state);
+      }
+      if (id(temperature_exterieure).has_state()) {
+        it.printf(70, 200, id(arimo18), TextAlign::TOP_LEFT, "Température extérieure : %.f °C", id(temperature_exterieure).state);
+      }
 
 # Set up the xpt2046 touch platform
 touchscreen:
@@ -240,12 +306,13 @@ touchscreen:
   interrupt_pin: GPIO36
   update_interval: 50ms
   threshold: 400
-  calibration_x_min: 3860
-  calibration_x_max: 280
-  calibration_y_min: 340
-  calibration_y_max: 3860
+  calibration:
+    x_min: 180
+    x_max: 3800
+    y_min: 240
+    y_max: 3860
   transform:
-    swap_xy: false
+    swap_xy: true
 # When the display is touched, turn on the backlight,
 # store that we had a recent touch, and update the UI
   on_touch:
@@ -254,6 +321,13 @@ touchscreen:
         - lambda: |-
             id(recent_touch) = true;
         - script.execute: update_ui_values
+
+text_sensor:
+  # sun/moon
+  - platform: homeassistant
+    entity_id: sun.sun
+    id: sun
+    internal: true
 
 # Wifi sensor that drives the UI signal strength icon
 sensor:
@@ -265,3 +339,29 @@ sensor:
     id: wifi_signal_pct
     update_interval: 60s
     entity_category: "diagnostic"
+
+  - platform: adc
+    pin: GPIO34
+    name: "board_ldr"
+    update_interval: 1500ms
+
+  - platform: homeassistant
+    id: linky_va_in
+    entity_id: sensor.pizerow_linky_sinsts
+    internal: true
+
+  - platform: homeassistant
+    id: linky_va_out
+    entity_id: sensor.pizerow_linky_sinsti
+    internal: true
+
+  - platform: homeassistant
+    id: nantes_rain_chance
+    entity_id: sensor.nantes_rain_chance
+    internal: true
+
+  - platform: homeassistant
+    id: temperature_exterieure
+    entity_id: sensor.ebusd_broadcast_outsidetemp
+    internal: true
+
