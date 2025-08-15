@@ -117,14 +117,15 @@ font:
         "󰤨", # wifi-4
     ]
 
-  - file: 'fonts/Arimo-Regular.ttf'
+  - file: 'DSEG14-Classic-MINI/DSEG14ClassicMini-Italic.ttf'
+  #- file: 'fonts/Arimo-Regular.ttf'
     id: arimo48
-    size: 48
+    size: 38
     glyphs: " .,°0123456789CVA-"
   - file: 'fonts/Arimo-Regular.ttf'
     id: arimo18
     size: 18
-    glyphs: "0123456789%.Pluie: °CExtrTmpéa"
+    glyphs: "0123456789%.Pluie: °CExtrTmpa"
   - file: 'fonts/NotoEmoji-VariableFont_wght.ttf'
     id: noto18
     size: 18
@@ -300,7 +301,7 @@ display:
         it.printf(18, 220, id(arimo18), TextAlign::TOP_LEFT, " Pluie: %.f %%", id(nantes_rain_chance).state);
       }
       if (id(temperature_exterieure).has_state()) {
-        it.printf(70, 200, id(arimo18), TextAlign::TOP_LEFT, "Température extérieure : %.f °C", id(temperature_exterieure).state);
+        it.printf(70, 200, id(arimo18), TextAlign::TOP_LEFT, "Temperature exterieure : %.f °C", id(temperature_exterieure).state);
       }
 
 # Set up the xpt2046 touch platform
