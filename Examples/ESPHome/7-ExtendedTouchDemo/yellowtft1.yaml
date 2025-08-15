@@ -67,6 +67,9 @@ wifi:
 
 captive_portal:
 
+web_server:
+  port: 80
+
 # Set up some global variables for some values that we want to persist
 globals:
   - id: wifi_iconstring
@@ -251,10 +254,12 @@ interval:
 display:
   - platform: ili9xxx
     model: ili9341
+    #model: ST7789V
     spi_id: tft
     cs_pin: GPIO15
     dc_pin: GPIO2
     invert_colors: false
+    color_palette: 8BIT
     transform:
       swap_xy: true
     dimensions:
@@ -304,7 +309,7 @@ touchscreen:
   spi_id: touch
   cs_pin: GPIO33
   interrupt_pin: GPIO36
-  update_interval: 50ms
+  #update_interval: 50ms
   threshold: 400
   calibration:
     x_min: 180
@@ -322,12 +327,12 @@ touchscreen:
             id(recent_touch) = true;
         - script.execute: update_ui_values
 
-text_sensor:
-  # sun/moon
-  - platform: homeassistant
-    entity_id: sun.sun
-    id: sun
-    internal: true
+# text_sensor:
+#   # sun/moon
+#   - platform: homeassistant
+#     entity_id: sun.sun
+#     id: sun
+#     internal: true
 
 # Wifi sensor that drives the UI signal strength icon
 sensor:
@@ -343,7 +348,7 @@ sensor:
   - platform: adc
     pin: GPIO34
     name: "board_ldr"
-    update_interval: 1500ms
+    update_interval: 60s
 
   - platform: homeassistant
     id: linky_va_in
