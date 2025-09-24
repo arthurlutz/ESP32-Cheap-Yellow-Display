@@ -36,7 +36,7 @@ esphome:
   name: $device_name
   friendly_name: $friendly_name
   on_boot:
-    - delay: 5s
+    - delay: 1s
     - lvgl.widget.hide: boot_screen
 
 host:
@@ -90,7 +90,14 @@ font:
       "\U000F059E", # windy-variant
       "\U000F14E4", # sunny-off
       ]
-
+  - file: "fonts/materialdesignicons-webfont.ttf"
+    id: icons_30
+    size: 30
+    bpp: 4
+    glyphs: [
+      "\U000F0D3E", # grid
+      "\U000F1A74", # solar
+      ]
   - file: 'fonts/materialdesignicons-webfont.ttf'
     id: mdi_large
     size: 48
@@ -247,6 +254,17 @@ lvgl:
             pad_all: 4
             pad_top: 10
             widgets:
+              - label:
+                  text: "\U000F1A74"
+                  id: lbl_solar_icon
+                  text_font: icons_30
+                  text_align: CENTER
+              - label:
+                  text: "\U000F0D3E"
+                  id: lbl_grid_icon
+                  text_font: icons_30
+                  text_align: RIGHT
+                  x: 200
               - meter:
                   height: 100%
                   width: 100%
@@ -254,8 +272,8 @@ lvgl:
                   bg_opa: TRANSP
                   align: CENTER
                   scales:
-                    - range_from: -10
-                      range_to: 10
+                    - range_from: -500
+                      range_to: 500
                       angle_range: 180 # sets the total angle to 180 = starts mid left and ends mid right
                       ticks:
                         count: 0
@@ -269,14 +287,20 @@ lvgl:
                             color:  0x00FF00 # green
                             r_mod: 10 # radius difference from the scale default radius
                             width: 31
-                            start_value: -10
+                            start_value: -500
                             end_value: 0
                         - arc: # second half of the scale background
-                            color:  0xFF3000 # red
+                            color:  0xFFB000  # orange
                             r_mod: 10
                             width: 31
                             start_value: 0
-                            end_value: 10
+                            end_value: 400
+                        - arc: # third half of the scale background
+                            color:  0xFF3000 # red
+                            r_mod: 10
+                            width: 31
+                            start_value: 400
+                            end_value: 500
               - obj: # to cover the middle part of meter indicator line
                   height: 146
                   width: 146
