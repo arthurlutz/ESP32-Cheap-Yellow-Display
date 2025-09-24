@@ -267,6 +267,7 @@ display:
       width: 320
       height: 240
     lambda: |-
+      auto green = Color(0, 255, 0);
       it.fill(id(Color::BLACK));
       it.filled_circle(80, 120, 60, id(ha_blue));
       it.filled_circle(240, 120, 60, id(ha_blue));
@@ -283,7 +284,7 @@ display:
 
       it.print(296, 0, id(mdi_medium), id(wifi_iconstring).c_str());
       if (id(linky_va_in).has_state() and id(linky_va_in).state > 0) {
-        it.printf(160, 0, id(arimo48), TextAlign::TOP_CENTER, "%.1f VA", id(linky_va_in).state);
+        it.printf(160, 0, id(arimo48), green, TextAlign::TOP_CENTER, "%.0f  VA", id(linky_va_in).state);
         if (id(linky_va_in).state > 1000) {
           it.filled_circle(240, 120, 60, id(ha_red));
         }
