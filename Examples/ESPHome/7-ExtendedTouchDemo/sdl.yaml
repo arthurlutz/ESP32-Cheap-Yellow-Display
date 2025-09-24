@@ -1,0 +1,482 @@
+#
+# Basic yaml code to get the ESP32-2432S028R display to work in ESPHome.
+#
+# This yaml displays two circles with icons in them acting as binary touch sensors inside of Home Assistant.
+# It turns off the backlight after 30-60 seconds
+#
+# Written by Jonny Bergdahl and then extended slightly
+# - [GitHub](https://github.com/jonnybergdahl)
+# - [Twitter](https://twitter.com/jonnybergdahl)
+# - [YouTube](https://www.youtube.com/jonnybergdahl)
+#
+# ============================================================
+# NOTE:
+# In order for this to work you need to add the following settings in your secrets.yaml file:
+# - api_key
+# - ota_password
+# - wifi_ssid
+# - wifi_password
+# - ap_password
+#
+# Create a folder named fonts in your ESPHome folder, and copy the file fonts/materialdesignicons-webfont.ttf there.
+#
+# ============================================================
+# Example file setup
+# Change the naming below, they will be the names used in Home Assistant
+#
+substitutions:
+  device_name: sdl
+  friendly_name: Dev test in SDL
+
+# ============================================================
+# Standard ESPHome setup
+#
+# ESPHome naming
+esphome:
+  name: $device_name
+  friendly_name: $friendly_name
+  on_boot:
+    - delay: 5s
+    - lvgl.widget.hide: boot_screen
+
+host:
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret api_key
+
+  on_client_connected:
+    - if:
+        condition:
+          lambda: 'return (0 == client_info.find("Home Assistant "));'
+        then:
+          - lvgl.widget.show: lbl_hastatus
+  on_client_disconnected:
+    - if:
+        condition:
+          lambda: 'return (0 == client_info.find("Home Assistant "));'
+        then:
+          - lvgl.widget.hide: lbl_hastatus
+
+# ============================================================
+# ESPHome Display related setup
+#
+# Create a font to use, add and remove glyphs as needed
+# The Material Design Icon font is going to be used to display wifi
+# state as well as displaying the lightbulb icons
+font:
+  - file: "fonts/materialdesignicons-webfont.ttf"
+    id: icons_100
+    size: 100
+    bpp: 4
+    glyphs: [
+      "\U000F0594", # clear-night
+      "\U000F0590", # cloudy
+      "\U000F0F2F", # exceptional
+      "\U000F0591", # fog
+      "\U000F0592", # hail
+      "\U000F0593", # lightning
+      "\U000F067E", # lightning-rainy
+      "\U000F0595", # partlycloudy
+      "\U000F0596", # pouring
+      "\U000F0597", # rainy
+      "\U000F0598", # snowy
+      "\U000F067F", # snowy-rainy
+      "\U000F0599", # sunny
+      "\U000F059D", # windy
+      "\U000F059E", # windy-variant
+      "\U000F14E4", # sunny-off
+      ]
+
+  - file: 'fonts/materialdesignicons-webfont.ttf'
+    id: mdi_large
+    size: 48
+    glyphs: [
+        "󰛨", # lightbulb-on
+        "󰹏", # lightbulb-off
+        "󱤭", # electricty in
+        "󱤬", # electricity out
+        "󱩴", # solar electricity
+   #     "󱤬", # cloudy
+        "󰖕", # sun & clouds
+        "󰖖", # rain
+        "󰖙", # sunny,
+        "󰔐", # temp
+        "󰸂", # temp down
+        "󰸃", # temp up
+    ]
+  - file: "fonts/materialdesignicons-webfont.ttf"
+    id: mdi_medium
+    size: 24
+    glyphs: [
+        "󰤮", # no-wifi
+        "󰤫", # low-wifi
+        "󰤟", # wifi-1
+        "󰤢", # wifi-2
+        "󰤥", # wifi-3
+        "󰤨", # wifi-4
+    ]
+
+  - file: 'DSEG14-Classic-MINI/DSEG14ClassicMini-Italic.ttf'
+  #- file: 'fonts/Arimo-Regular.ttf'
+    id: arimo48
+    size: 38
+    glyphs: " .,°0123456789CVA-~"
+  - file: 'fonts/Arimo-Regular.ttf'
+    id: arimo18
+    size: 18
+    glyphs: "0123456789%.Pluie: °CExtrTmpa"
+  - file: 'fonts/NotoEmoji-VariableFont_wght.ttf'
+    id: noto18
+    size: 18
+    glyphs: "🌧🌦⛅🔌🎶☀ "
+
+
+
+image:
+  - file: https://web.archive.org/web/20250726185332if_/https://esphome.io/_static/favicon-512x512.png
+    id: boot_logo
+    resize: 200x200
+    type: RGB565
+    transparency: alpha_channel
+
+# Create a Home Assistant blue color
+color:
+  - id: ha_blue
+    hex: 51c0f2
+  - id: ha_red
+    hex: F28350
+  - id: ha_green
+    hex: 4ff283
+  - id: ha_yellow
+    hex: 4ff283
+
+# Example configuration entry
+touchscreen:
+  platform: sdl
+  calibration:
+    x_min: 180
+    x_max: 3800
+    y_min: 240
+    y_max: 3860
+  transform:
+    swap_xy: true
+
+
+lvgl:
+  top_layer:
+    widgets:
+      - label:
+          text: "\uF1EB"
+          id: lbl_hastatus
+          hidden: true
+          align: top_right
+          x: -2
+          y: 7
+          text_align: right
+          text_color: 0x535353 # grey
+      - buttonmatrix:
+          align: bottom_mid
+          styles: header_footer
+          pad_all: 0
+          outline_width: 0
+          id: top_layer
+          items:
+            styles: header_footer
+          rows:
+            - buttons:
+              - id: page_prev
+                text: "\uF053"
+                on_press:
+                  then:
+                    lvgl.page.previous:
+              - id: page_home
+                text: "\uF015"
+                on_press:
+                  then:
+                    lvgl.page.show: main_page
+              - id: page_next
+                text: "\uF054"
+                on_press:
+                  then:
+                    lvgl.page.next:
+      # make sure it's the last one in this list:
+      - obj:
+          id: boot_screen
+          x: 0
+          y: 0
+          width: 100%
+          height: 100%
+          bg_color: 0xffffff
+          bg_opa: COVER
+          radius: 0
+          pad_all: 0
+          border_width: 0
+          widgets:
+            - image:
+                align: CENTER
+                src: boot_logo
+                y: -40
+            - spinner:
+                align: CENTER
+                y: 95
+                height: 50
+                width: 50
+                spin_time: 1s
+                arc_length: 60deg
+                arc_width: 8
+                indicator:
+                  arc_color: 0x18bcf2
+                  arc_width: 8
+          on_press:
+            - lvgl.widget.hide: boot_screen
+  pages:
+    - id: main_page
+      widgets:
+        - obj:
+            height: 240
+            width: 240
+            align: CENTER
+            bg_color: 0xFFFFFF
+            border_width: 0
+            pad_all: 4
+            widgets:
+              - meter:
+                  height: 100%
+                  width: 100%
+                  border_width: 0
+                  bg_opa: TRANSP
+                  align: CENTER
+                  scales:
+                    - range_from: -10
+                      range_to: 10
+                      angle_range: 180 # sets the total angle to 180 = starts mid left and ends mid right
+                      ticks:
+                        count: 0
+                      indicators:
+                        - line:
+                            id: val_needle
+                            width: 8
+                            r_mod: 12 # sets line length by this much difference from the scale default radius
+                            value: -2
+                        - arc: # first half of the scale background
+                            color:  0x00FF00 # green
+                            r_mod: 10 # radius difference from the scale default radius
+                            width: 31
+                            start_value: -10
+                            end_value: 0
+                        - arc: # second half of the scale background
+                            color:  0xFF3000 # red
+                            r_mod: 10
+                            width: 31
+                            start_value: 0
+                            end_value: 10
+              - obj: # to cover the middle part of meter indicator line
+                  height: 146
+                  width: 146
+                  radius: 73
+                  align: CENTER
+                  border_width: 0
+                  bg_color: 0xFFFFFF
+                  pad_all: 0
+              - label: # gauge numeric indicator
+                  id: val_text
+                  text_font: montserrat_48
+                  align: CENTER
+                  y: -5
+                  text: "0"
+              - label: # lower range indicator
+                  text_font: montserrat_18
+                  align: CENTER
+                  y: 8
+                  x: -90
+                  text: "-500"
+              - label: # higher range indicator
+                  text_font: montserrat_18
+                  align: CENTER
+                  y: 8
+                  x: 90
+                  text: "+500"
+
+
+    - id: weather_forecast
+      widgets:
+        - obj:
+            align: CENTER
+            width: 228
+            height: 250
+            pad_all: 10
+            layout:
+              pad_column: 0
+              type: GRID
+              grid_rows: [FR(48), FR(13), FR(13), FR(13), FR(13)]
+              grid_columns: [FR(10), FR(40), FR(40), FR(10)]
+            widgets:
+              - label:
+                  text: "\U000F14E4"
+                  id: lbl_weather_forecast_condition_icon
+                  text_font: icons_100
+                  text_align: CENTER
+                  grid_cell_row_pos: 0
+                  grid_cell_column_pos: 0
+                  grid_cell_column_span: 2
+                  grid_cell_x_align: CENTER
+                  grid_cell_y_align: START
+
+              - label:
+                  text: "Unknown"
+                  id: lbl_weather_forecast_condition_name
+                  text_align: CENTER
+                  grid_cell_row_pos: 0
+                  grid_cell_column_pos: 2
+                  grid_cell_column_span: 2
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: CENTER
+
+              - label:
+                  text: "Feels like:"
+                  grid_cell_row_pos: 1
+                  grid_cell_column_pos: 1
+
+              - label:
+                  text: "--.- °C"
+                  id: lbl_weather_forecast_tempap
+                  text_align: RIGHT
+                  grid_cell_row_pos: 1
+                  grid_cell_column_pos: 2
+                  grid_cell_x_align: STRETCH
+
+              - label:
+                  text: "Maximum:"
+                  grid_cell_row_pos: 2
+                  grid_cell_column_pos: 1
+
+              - label:
+                  text: "--.- °C"
+                  id: lbl_weather_forecast_temphi
+                  text_align: RIGHT
+                  grid_cell_row_pos: 2
+                  grid_cell_column_pos: 2
+                  grid_cell_x_align: STRETCH
+
+              - label:
+                  text: "Minimum:"
+                  grid_cell_row_pos: 3
+                  grid_cell_column_pos: 1
+
+              - label:
+                  text: "--.- °C"
+                  id: lbl_weather_forecast_templo
+                  text_align: RIGHT
+                  grid_cell_row_pos: 3
+                  grid_cell_column_pos: 2
+                  grid_cell_x_align: STRETCH
+
+              - label:
+                  text: "Now:"
+                  grid_cell_row_pos: 4
+                  grid_cell_column_pos: 1
+
+              - label:
+                  text: "--.- °C"
+                  id: lbl_weather_outdnoor_now
+                  text_align: RIGHT
+                  grid_cell_row_pos: 4
+                  grid_cell_column_pos: 2
+                  grid_cell_x_align: STRETCH
+  style_definitions:
+    - id: header_footer
+      bg_color: 0x2F8CD8
+      bg_grad_color: 0x005782
+      bg_grad_dir: VER
+      bg_opa: COVER
+      border_opa: TRANSP
+      radius: 0
+      pad_all: 0
+      pad_row: 0
+      pad_column: 0
+      border_color: 0x0077b3
+      text_color: 0xFFFFFF
+      width: 100%
+      height: 30
+
+# Setup the ili9xxx platform
+#
+# Display is used as 240x320 by default so we rotate it to 90°
+display:
+  - platform: sdl
+    dimensions:
+      width: 320
+      height: 240
+    auto_clear_enabled: false
+    update_interval: never
+
+# Wifi sensor that drives the UI signal strength icon
+sensor:
+  - platform: homeassistant
+    id: linky_va_in
+    entity_id: sensor.pizerow_linky_sinsts
+    internal: true
+
+  - platform: homeassistant
+    id: linky_va_out
+    entity_id: sensor.pizerow_linky_sinsti
+    internal: true
+
+  - platform: homeassistant
+    id: nantes_rain_chance
+    entity_id: sensor.nantes_rain_chance
+    internal: true
+
+  - platform: homeassistant
+    id: temperature_exterieure
+    entity_id: sensor.ebusd_broadcast_outsidetemp
+    internal: true
+
+  - platform: homeassistant
+    id: power_in_or_out
+    entity_id: sensor.pizerow_linky_sinsts
+    internal: true
+    on_value:
+      - lvgl.indicator.update:
+          id: val_needle
+          value: !lambda return x;
+      - lvgl.label.update:
+          id: val_text
+          text:
+            format: "%.0f"
+            args: [ 'x' ]
+
+binary_sensor:
+  - platform: status
+    name: Status sensor
+
+text:
+  - platform: lvgl
+    name: fr_cond_icon
+    widget: lbl_weather_forecast_condition_icon
+    mode: text
+  - platform: lvgl
+    name: fr_cond_name
+    widget: lbl_weather_forecast_condition_name
+    mode: text
+  - platform: lvgl
+    name: fr_tempap
+    widget: lbl_weather_forecast_tempap
+    mode: text
+  - platform: lvgl
+    name: fr_temphi
+    widget: lbl_weather_forecast_temphi
+    mode: text
+  - platform: lvgl
+    name: fr_templo
+    widget: lbl_weather_forecast_templo
+    mode: text
+  - platform: lvgl
+    name: wd_out_now
+    widget: lbl_weather_outdnoor_now
+    mode: text
