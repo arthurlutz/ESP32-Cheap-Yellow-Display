@@ -2,6 +2,8 @@
 
 Adaptation of example esphome with LVGL to display energy consumption collected by linky homeassistant (grid + solar). 
 
+![](cyd-energy.jpg)
+
 Run : 
 
 ```
