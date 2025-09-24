@@ -48,7 +48,6 @@ logger:
 api:
   encryption:
     key: !secret api_key
-
   on_client_connected:
     - if:
         condition:
@@ -155,17 +154,18 @@ color:
   - id: ha_yellow
     hex: 4ff283
 
-# Example configuration entry
-touchscreen:
-  platform: sdl
-  calibration:
-    x_min: 180
-    x_max: 3800
-    y_min: 240
-    y_max: 3860
-  transform:
-    swap_xy: true
 
+binary_sensor:
+  - platform: status
+    name: Status sensor
+
+
+# ============================================================
+# Hardware related setup
+#
+
+# ============================================================
+# DISPLAY
 
 lvgl:
   top_layer:
@@ -221,9 +221,10 @@ lvgl:
                 align: CENTER
                 src: boot_logo
                 y: -40
+                pad_top: 10
             - spinner:
                 align: CENTER
-                y: 95
+                y: 80
                 height: 50
                 width: 50
                 spin_time: 1s
@@ -244,6 +245,7 @@ lvgl:
             bg_color: 0xFFFFFF
             border_width: 0
             pad_all: 4
+            pad_top: 10
             widgets:
               - meter:
                   height: 100%
@@ -292,13 +294,13 @@ lvgl:
               - label: # lower range indicator
                   text_font: montserrat_18
                   align: CENTER
-                  y: 8
+                  y: 18
                   x: -90
                   text: "-500"
               - label: # higher range indicator
                   text_font: montserrat_18
                   align: CENTER
-                  y: 8
+                  y: 18
                   x: 90
                   text: "+500"
 
@@ -404,7 +406,7 @@ lvgl:
       width: 100%
       height: 30
 
-# Setup the ili9xxx platform
+# Setup the SDL platform
 #
 # Display is used as 240x320 by default so we rotate it to 90°
 display:
@@ -414,6 +416,17 @@ display:
       height: 240
     auto_clear_enabled: false
     update_interval: never
+
+# SDL touchscreen with same dimensions as CYD
+touchscreen:
+  platform: sdl
+  calibration:
+    x_min: 180
+    x_max: 3800
+    y_min: 240
+    y_max: 3860
+  transform:
+    swap_xy: true
 
 # Wifi sensor that drives the UI signal strength icon
 sensor:
@@ -450,10 +463,6 @@ sensor:
           text:
             format: "%.0f"
             args: [ 'x' ]
-
-binary_sensor:
-  - platform: status
-    name: Status sensor
 
 text:
   - platform: lvgl
